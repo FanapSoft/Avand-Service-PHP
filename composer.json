@@ -1,0 +1,27 @@
+{
+  "name": "pod-sdk/avand-service",
+  "version": "1.0.0",
+  "type": "library",
+  "keywords": ["sdk", "pod sdk", "pod sdk avand service"],
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Elham Keshtgar",
+      "email": "podsdk@fanap.ir"
+    }
+  ],
+  "description": "Avand Service SDK",
+
+  "require": {
+    "ext-openssl": "*",
+    "pod-sdk/pod-base-service" : "^3.0.2"
+  },
+  "autoload": {
+    "psr-4": {
+      "Avand\\Service\\" : "src/"
+    }
+  },
+  "require-dev": {
+    "phpunit/phpunit": "^8"
+  }
+}
