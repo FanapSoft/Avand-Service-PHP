@@ -8,6 +8,7 @@
  * $baseInfo BaseInfo
  */
 namespace Avand\Service;
+use Pod\Base\Service\ApiRequestHandler;
 use Pod\Base\Service\BaseService;
 use Pod\Base\Service\BaseInfo;
 use Pod\Base\Service\Exception\PodException;
@@ -17,8 +18,8 @@ class AvandService extends BaseService
 {
     private $header;
     private static $jsonSchema;
-    private static $billingApi;
-    private static $serviceProductId;
+    private static $avandApi;
+    private static $serviceCallProductId;
     private static $baseUri;
 
     public function __construct($baseInfo)
@@ -30,42 +31,21 @@ class AvandService extends BaseService
             '_token_issuer_'    =>  $baseInfo->getTokenIssuer(),
             '_token_'           => $baseInfo->getToken()
         ];
-        self::$billingApi = require __DIR__ . '/../config/apiConfig.php';
-        self::$serviceProductId = require __DIR__ . '/../config/serviceProductId.php';
+        self::$avandApi = require __DIR__ . '/../config/apiConfig.php';
+        self::$serviceCallProductId = require __DIR__ . '/../config/serviceProductId.php';
         self::$baseUri = self::$config[self::$serverType];
-        self::$serviceProductId = self::$serviceProductId[self::$serverType];
+        self::$serviceCallProductId = self::$serviceCallProductId[self::$serverType];
 
     }
 
     public function issueInvoice($params) {
         $apiName = 'issueInvoice';
-        $optionHasArray = false;
-        $method = self::$billingApi[$apiName]['method'];
-        $paramKey = ($method == 'GET') ? 'query' : 'form_params';
-        array_walk_recursive($params, 'self::prepareData');
-
-        $option = [
-            'headers' => $this->header,
-            $paramKey => $params,
-        ];
-
-        self::validateOption($option, self::$jsonSchema[$apiName], $paramKey);
-
-        # prepare params to send
-        # set service call product Id
-        $option[$paramKey]['scProductId'] = self::$serviceProductId[$apiName];
-
-        if (isset($params['scVoucherHash'])) {
-            $option['withoutBracketParams'] =  $option[$paramKey];
-            $optionHasArray = true;
-            $method = 'GET';
-            unset($option[$paramKey]);
-        }
+        list($method, $option, $optionHasArray) = $this->prepareDataBeforeSend($params, $apiName);
 
         return AvandApiRequestHandler::Request(
-            self::$baseUri[self::$billingApi[$apiName]['baseUri']],
+            self::$baseUri[self::$avandApi[$apiName]['baseUri']],
             $method,
-            self::$billingApi[$apiName]['subUri'],
+            self::$avandApi[$apiName]['subUri'],
             $option,
             false,
             $optionHasArray);
@@ -73,33 +53,12 @@ class AvandService extends BaseService
 
     public function getInvoiceList($params) {
         $apiName = 'getInvoiceList';
-        $optionHasArray = false;
-        $method = self::$billingApi[$apiName]['method'];
-        $paramKey = ($method == 'GET') ? 'query' : 'form_params';
-        array_walk_recursive($params, 'self::prepareData');
+        list($method, $option, $optionHasArray) = $this->prepareDataBeforeSend($params, $apiName);
 
-        $option = [
-            'headers' => $this->header,
-            $paramKey => $params,
-        ];
-
-        self::validateOption($option, self::$jsonSchema[$apiName], $paramKey);
-
-        # prepare params to send
-        # set service call product Id
-        $option[$paramKey]['scProductId'] = self::$serviceProductId[$apiName];
-
-        if (isset($params['scVoucherHash']) || isset($params['issuerId'])) {
-            $option['withoutBracketParams'] =  $option[$paramKey];
-            $optionHasArray = true;
-            $method = 'GET';
-            unset($option[$paramKey]);
-        }
-
-        return AvandApiRequestHandler::Request(
-            self::$baseUri[self::$billingApi[$apiName]['baseUri']],
+        return ApiRequestHandler::Request(
+            self::$baseUri[self::$avandApi[$apiName]['baseUri']],
             $method,
-            self::$billingApi[$apiName]['subUri'],
+            self::$avandApi[$apiName]['subUri'],
             $option,
             false,
             $optionHasArray);
@@ -107,30 +66,12 @@ class AvandService extends BaseService
 
     public function verifyInvoice($params) {
         $apiName = 'verifyInvoice';
-        $optionHasArray = false;
-        array_walk_recursive($params, 'self::prepareData');
-        $method = self::$billingApi[$apiName]['method'];
-        $paramKey = $method == 'GET' ? 'query' : 'form_params';
+        list($method, $option, $optionHasArray) = $this->prepareDataBeforeSend($params, $apiName);
 
-        $option = [
-            'headers' => $this->header,
-            $paramKey => $params,
-        ];
-
-        self::validateOption($option, self::$jsonSchema[$apiName], $paramKey);
-        # set service call product Id
-        $option[$paramKey]['scProductId'] = self::$serviceProductId[$apiName];
-
-        if (isset($params['scVoucherHash'])) {
-            $option['withoutBracketParams'] =  $option[$paramKey];
-            $optionHasArray = true;
-            $method = 'GET';
-            unset($option[$paramKey]);
-        }
         return AvandApiRequestHandler::Request(
-            self::$baseUri[self::$billingApi[$apiName]['baseUri']],
+            self::$baseUri[self::$avandApi[$apiName]['baseUri']],
             $method,
-            self::$billingApi[$apiName]['subUri'],
+            self::$avandApi[$apiName]['subUri'],
             $option,
             false,
             $optionHasArray
@@ -139,37 +80,49 @@ class AvandService extends BaseService
 
     public function cancelInvoice($params) {
         $apiName = 'cancelInvoice';
-        $optionHasArray = false;
-        array_walk_recursive($params, 'self::prepareData');
-
-        $method = self::$billingApi[$apiName]['method'];
-        $paramKey = $method == 'GET' ? 'query' : 'form_params';
-
-        $option = [
-            'headers' => $this->header,
-            $paramKey => $params,
-        ];
-
-         self::validateOption($option, self::$jsonSchema[$apiName], $paramKey);
-        # prepare params to send
-        # set service call product Id
-        $option[$paramKey]['scProductId'] = self::$serviceProductId[$apiName];
-
-        if (isset($params['scVoucherHash'])) {
-            $option['withoutBracketParams'] =  $option[$paramKey];
-            $optionHasArray = true;
-            $method = 'GET';
-            unset($option[$paramKey]);
-        }
+        list($method, $option, $optionHasArray) = $this->prepareDataBeforeSend($params, $apiName);
 
         return AvandApiRequestHandler::Request(
-            self::$baseUri[self::$billingApi[$apiName]['baseUri']],
+            self::$baseUri[self::$avandApi[$apiName]['baseUri']],
             $method,
-            self::$billingApi[$apiName]['subUri'],
+            self::$avandApi[$apiName]['subUri'],
             $option,
             false,
             $optionHasArray
         );
+    }
+
+    private function prepareDataBeforeSend($params, $apiName){
+        $header = $this->header;
+        $optionHasArray = false;
+        array_walk_recursive($params, 'self::prepareData');
+        $method = self::$avandApi[$apiName]['method'];
+        $paramKey = $method == 'GET' ? 'query' : 'form_params';
+
+        // if token is set replace it
+        if(isset($params['token'])) {
+            $header["_token_"] = $params['token'];
+            unset($params['token']);
+        }
+
+        $option = [
+            'headers' => $header,
+            $paramKey => $params,
+        ];
+
+        self::validateOption($option, self::$jsonSchema[$apiName], $paramKey);
+
+        # set service call product Id
+        $option[$paramKey]['scProductId'] = self::$serviceCallProductId[$apiName];
+
+        if (isset($params['scVoucherHash'])  || isset($params['issuerId'])) {
+            $option['withoutBracketParams'] =  $option[$paramKey];
+            unset($option[$paramKey]);
+            $optionHasArray = true;
+            $method = 'GET';
+        }
+
+        return [$method, $option, $optionHasArray];
     }
 
 }

@@ -1,6 +1,6 @@
 {
   "name": "pod-sdk/avand-service",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "type": "library",
   "keywords": ["sdk", "pod sdk", "pod sdk avand service"],
   "license": "MIT",
