@@ -1,6 +1,6 @@
 .idea/
 .vscode/
-BillingDemo.php
+*Demo.php
 **/vendor/
 composer.lock
 avandTestDataLocal.php
